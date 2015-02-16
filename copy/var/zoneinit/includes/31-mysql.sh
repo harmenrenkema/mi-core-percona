@@ -56,6 +56,12 @@ TABLE_CACHE=$((${MEMCAP}/4))
 THREAD_CACHE_SIZE=$((${MAX_CONNECTIONS}/2))
 [[ ${THREAD_CACHE_SIZE} -gt 1000 ]] && THREAD_CACHE_SIZE=1000
 
+# query_cache_size
+[[ ${MEMCAP} -lt 1000 ]] && QUERY_CACHE_SIZE=16
+[[ ${MEMCAP} -gt 1000 ]] && QUERY_CACHE_SIZE=64
+[[ ${MEMCAP} -gt 3000 ]] && QUERY_CACHE_SIZE=128
+[[ ${MEMCAP} -gt 5000 ]] && QUERY_CACHE_SIZE=512
+
 log "tuning MySQL configuration"
 gsed -i \
         -e "s/bind-address = 127.0.0.1/bind-address = ${PRIVATE_IP:-${PUBLIC_IP}}/" \
@@ -64,6 +70,9 @@ gsed -i \
         -e "s/thread_cache_size = 1000/thread_cache_size = ${THREAD_CACHE_SIZE}/" \
         -e "s/max_connections = 1000/max_connections = ${MAX_CONNECTIONS}/" \
         -e "s/innodb_buffer_pool_size = 16M/innodb_buffer_pool_size = ${INNODB_BUFFER_POOL_SIZE}/" \
+        -e "s/#query_cache_size = 16M/query_cache_size = ${QUERY_CACHE_SIZE}M/" \
+        -e "s/#query_cache_strip_comments/query_cache_strip_comments/" \
+        -e "s/query_cache_type = 0/query_cache_type = 1/" \
         /opt/local/etc/my.cnf
 
 log "configuring Quickbackup"
