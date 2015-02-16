@@ -21,7 +21,7 @@ FLUSH PRIVILEGES;
 install plugin sphinx soname 'ha_sphinx.so';"
 
 # MySQL my.cnf tuning
-MEMCAP=$(kstat -c zone_memory_cap -s physcap -p | cut -f2 | awk '{ printf "%d", $1/1024/1024 }');
+MEMCAP=$(( ${RAM_IN_BYTES} / 1024 / 1024 ));
 
 # innodb_buffer_pool_size
 INNODB_BUFFER_POOL_SIZE=$(echo -e "scale=0; ${MEMCAP}/2"|bc)M
@@ -48,13 +48,13 @@ THREAD_CACHE_SIZE=$((${MAX_CONNECTIONS}/2))
 
 log "tuning MySQL configuration"
 gsed -i \
-	-e "s/bind-address = 127.0.0.1/bind-address = ${PRIVATE_IP:-${PUBLIC_IP}}/" \
-	-e "s/back_log = 64/back_log = ${BACK_LOG}/" \
-	-e "s/table_open_cache = 512/table_open_cache = ${TABLE_CACHE}/" \
-	-e "s/thread_cache_size = 1000/thread_cache_size = ${THREAD_CACHE_SIZE}/" \
-	-e "s/max_connections = 1000/max_connections = ${MAX_CONNECTIONS}/" \
-	-e "s/innodb_buffer_pool_size = 16M/innodb_buffer_pool_size = ${INNODB_BUFFER_POOL_SIZE}/" \
-	/opt/local/etc/my.cnf
+        -e "s/bind-address = 127.0.0.1/bind-address = ${PRIVATE_IP:-${PUBLIC_IP}}/" \
+        -e "s/back_log = 64/back_log = ${BACK_LOG}/" \
+        -e "s/table_open_cache = 512/table_open_cache = ${TABLE_CACHE}/" \
+        -e "s/thread_cache_size = 1000/thread_cache_size = ${THREAD_CACHE_SIZE}/" \
+        -e "s/max_connections = 1000/max_connections = ${MAX_CONNECTIONS}/" \
+        -e "s/innodb_buffer_pool_size = 16M/innodb_buffer_pool_size = ${INNODB_BUFFER_POOL_SIZE}/" \
+        /opt/local/etc/my.cnf
 
 log "configuring Quickbackup"
 svccfg -s quickbackup-percona setprop quickbackup/username = astring: ${QB_US}
@@ -63,8 +63,8 @@ svcadm refresh quickbackup-percona
 
 log "shutting down an existing instance of MySQL"
 if [[ "$(svcs -Ho state percona)" == "online" ]]; then
-	svcadm disable -t percona
-	sleep 2
+        svcadm disable -t percona
+        sleep 2
 fi
 
 log "starting the new MySQL instance"
@@ -90,5 +90,8 @@ sleep 1
   ( log "ERROR MySQL SMF not reporting as 'online'" && exit 31 )
 
 log "running the access lockdown SQL query"
-mysql -u root -e "${MYSQL_INIT}" >/dev/null || \
-  ( log "ERROR MySQL query failed to execute." && exit 31 )
+if [[ $(mysql -uroot -e "select version()" &>/dev/null)$? -eq "0" ]]; then
+  mysql -u root -e "${MYSQL_INIT}" >/dev/null || ( log "ERROR MySQL query failed to execute." && exit 31; )
+else
+  log "Can't login with no password set, continuing.";
+fi
