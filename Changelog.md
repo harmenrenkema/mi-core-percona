@@ -1,7 +1,10 @@
 # Changelog
 
-## 14.3.0 (unreleased)
+## 14.3.0
 
+* modify query cache default. [Thomas Merkel]
+* update version numbers. [Thomas Merkel]
+* add base. [Thomas Merkel]
 * update to the new percona version. [Thomas Merkel]
 * update readme with some basic information. [Thomas Merkel]
 * Enable query_cache_size, query_cache_strip_comments and query_cache_type based on the memory used on the zone. [Thomas Merkel]
