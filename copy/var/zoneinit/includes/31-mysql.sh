@@ -6,8 +6,14 @@ MYSQL_PW=$(od -An -N8 -x /dev/random | head -1 | tr -d ' ');
 # Generate svccfg happy password for quickbackup-percona
 # (one without special characters)
 log "getting qb_pw"
+QB_PW=${QB_PW:-$(mdata-get mysql_qb_pw 2>/dev/null)} || \
 QB_PW=$(od -An -N8 -x /dev/random | head -1 | sed 's/^[ \t]*//' | tr -d ' ');
 QB_US=qb-$(zonename | awk -F\- '{ print $5 }');
+
+# Be sure the generated MYSQL_PW password set also as mdata
+# information.
+mdata-put mysql_pw    "${MYSQL_PW}"
+mdata-put mysql_qb_pw "${QB_PW}"
 
 # Default query to lock down access and clean up
 MYSQL_INIT="DELETE from mysql.user;
