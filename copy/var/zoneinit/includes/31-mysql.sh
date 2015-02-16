@@ -60,7 +60,6 @@ THREAD_CACHE_SIZE=$((${MAX_CONNECTIONS}/2))
 [[ ${MEMCAP} -lt 1000 ]] && QUERY_CACHE_SIZE=16
 [[ ${MEMCAP} -gt 1000 ]] && QUERY_CACHE_SIZE=64
 [[ ${MEMCAP} -gt 3000 ]] && QUERY_CACHE_SIZE=128
-[[ ${MEMCAP} -gt 5000 ]] && QUERY_CACHE_SIZE=512
 
 log "tuning MySQL configuration"
 gsed -i \
