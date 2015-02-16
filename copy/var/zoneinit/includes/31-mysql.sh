@@ -15,6 +15,11 @@ QB_US=qb-$(zonename | awk -F\- '{ print $5 }');
 mdata-put mysql_pw    "${MYSQL_PW}"
 mdata-put mysql_qb_pw "${QB_PW}"
 
+# Workaround for using DHCP so PRIVATE_IP or PUBLIC_IP is empty
+if [ -z "${PRIVATE_IP}" ] || [ -z "${PUBLIC_IP}" ]; then
+	PRIVATE_IP="127.0.0.1"
+fi
+
 # Default query to lock down access and clean up
 MYSQL_INIT="DELETE from mysql.user;
 DELETE FROM mysql.proxies_priv WHERE Host='base.joyent.us';
