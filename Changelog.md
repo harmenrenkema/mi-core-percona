@@ -1,4 +1,21 @@
-percona-13.3.0
+# Changelog
+
+## 14.3.0 (unreleased)
+
+* update to the new percona version. [Thomas Merkel]
+* update readme with some basic information. [Thomas Merkel]
+* Enable query_cache_size, query_cache_strip_comments and query_cache_type based on the memory used on the zone. [Thomas Merkel]
+* joynet dont need access to my mysql server. [Thomas Merkel]
+* Workaround for DHCP provision machines. [Thomas Merkel]
+* Be sure we store all information in mdata. [Thomas Merkel]
+* Cleanup MySQL database first and than create it again on the delegate dataset. [Thomas Merkel]
+* use delegate dataset for storing databases. [Thomas Merkel]
+* update url of the code. [Thomas Merkel]
+* copy the script from the current mibe image. [Thomas Merkel]
+* Rename the mibe image, update motd and update license file. [Thomas Merkel]
+
+## percona-13.3.0
+
 * Base image is base64-13.3.0 (2013Q3)
 * Percona Server version is 5.6.13
 * Xtrabackup version is 2.1.3
@@ -6,7 +23,8 @@ percona-13.3.0
 * Quickbackup version is 3.5
 * Percona Server SMF name changed to 'percona'
 
-percona-13.1.0
+## percona-13.1.0
+
 * Base image is base64-13.1.0 (2013Q1)
 * Percona packages now in pkgsrc
 * Percona Server version is 5.5.29
@@ -14,7 +32,8 @@ percona-13.1.0
 * Quickbackup version is 3.5 (Name change to quickbackup-percona and backups now stored at /var/backups/percona)
 * Percona ToolKit version is 2.1.7
 
-percona-1.6.0
+## percona-1.6.0
+
 * Upgraded Percona to 5.5.27-rel28.1 (compiled with gcc 4.7)
 * Upgraded Xtrabackup to 2.1.0
 * Upgraded PerconaToolKit to 2.1.3
@@ -27,10 +46,12 @@ percona-1.6.0
 * Fixed bug in quickbackup depending on PID file PERCONA-5
 * Added ld_library_path hack to quickbackup
 
-percona-1.5.1
+## percona-1.5.1
+
 * Fixed Makefile to include DTrace probes: http://bugs.mysql.com/bug.php?id=60743
 
-percona-1.5.0 (with fixes it's 1.4.9, go ahead to 1.5.0)
+## percona-1.5.0 (with fixes it's 1.4.9, go ahead to 1.5.0)
+
 * Upgraded to Percona 5.5.24-rel26.0
 * Upgraded to Xtrabackup 2.0.0
 * Upgraded to PerconaToolKit 2.1.1
@@ -42,10 +63,12 @@ percona-1.5.0 (with fixes it's 1.4.9, go ahead to 1.5.0)
 * Added 03-dupipcheck.sh
 * Added 94-ipf.sh
 
-percona-1.3.9
+## percona-1.3.9
+
 * Upgraded to smartos-1.5.4 to fix redis install
 
-percona-1.3.8
+## percona-1.3.8
+
 * Upgraded to Percona-5.5.20-rel24.1 64-bit
 * Upgraded to Xtrabackup 1.6.5 64-bit
 * Upgraded to PerconaToolKit 2.0.3
@@ -54,28 +77,33 @@ percona-1.3.8
 * Fixed bug in quickbackup failing on rotating correctly
 * Set query_cache_type = 0
 
-percona-1.2.2
+## percona-1.2.2
+
 * Fixed bug in the way max_connections is set
 
-percona-1.2.1 (sdc6 from here on out)
+## percona-1.2.1 (sdc6 from here on out)
+
 * Added Percona 5.5.16-rel22, optimized (-O3) and 64-bit
 * Added Xtrabackup 1.6.3, optimized (-O3) and 64-bit
 * Replaced MySQLToolKit with Percona ToolKit 1.0.1
 
-percona-1.0.7 (last sdc5 release)
+## percona-1.0.7 (last sdc5 release)
+
 * Fixed permissions issue for BACKUPDIR in quickbackup
 * Added more verbose messaging to where logs go 
 * Fixed max_connections generation and thread_cache_size to work with smaller memory packages
 * Raised innodb_io_capacity to 1000
 * Fixed strsize in mysql_pid_slow.d
 
-percona-1.0.6
+## percona-1.0.6
+
 * SDC6'ified.
 * Quickbackup no longer uses qb-zonename as the user, only 'qb' now
 * If SDC6, quickbackup password aren't apart of portal credentials (SDC5 still virtualmin)
 * Fixed MEMCAP, QB_PW to work with sdc5 and sdc6
 
-percona-1.0.5
+## percona-1.0.5
+
 * Changed backup service name to Joyent QuickBackup
 * Changed quickbackup username to qb-${ZONENAME}
 * Added skip_name_resolv in my.cnf
@@ -84,21 +112,25 @@ percona-1.0.5
 * Added max_heap_table_size to match tmp_table_size (Peter Zaitsev, Percona suggestion)
 * Added extra Ciphers to sshd_config for putty fix
 
-percona-1.0.4
+## percona-1.0.4
+
 * Added Joyent backup service
 * Added Handlersocket, version from April 29th, 2011
 
-percona-1.0.3
+## percona-1.0.3
+
 * Added svc:/network/mysql:backup MySQL backup service
 * Fix SMA service (pkgadd net-snmp and SMF method fix)
 * Added back_log setting in my.cnf
 * Better tuning of my.cnf out of the box
 
-percona-1.0.1-1.0.2
+## percona-1.0.1-1.0.2
+
 * Updated Percona-Server to 5.1.55-rel12.6
 * Updated xtrabackup to 1.6
 
-percona-1.0.0
+## percona-1.0.0
+
 * Added Percona-Server 5.1.55-11.6
 * Added xtrabackup 1.5
 * Added Maakit
