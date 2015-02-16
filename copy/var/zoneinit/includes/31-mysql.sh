@@ -22,7 +22,6 @@ fi
 
 # Default query to lock down access and clean up
 MYSQL_INIT="DELETE from mysql.user;
-DELETE FROM mysql.proxies_priv WHERE Host='base.joyent.us';
 GRANT ALL on *.* to 'root'@'localhost' identified by '${MYSQL_PW}' with grant option;
 GRANT ALL on *.* to 'root'@'${PRIVATE_IP:-${PUBLIC_IP}}' identified by '${MYSQL_PW}' with grant option;
 GRANT LOCK TABLES,SELECT,RELOAD,SUPER,REPLICATION CLIENT on *.* to '${QB_US}'@'localhost' identified by '${QB_PW}';
