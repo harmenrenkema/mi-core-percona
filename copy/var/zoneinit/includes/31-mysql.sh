@@ -1,7 +1,25 @@
-# Get password from metadata, unless passed as MYSQL_PW, or set one.
-log "getting mysql_pw"
-MYSQL_PW=${MYSQL_PW:-$(mdata-get mysql_pw 2>/dev/null)} || \
-MYSQL_PW=$(od -An -N8 -x /dev/random | head -1 | tr -d ' ');
+# Get internal and external ip of vm
+IP_EXTERNAL=$(mdata-get sdc:nics | /usr/bin/json -ag ip -c 'this.nic_tag === "external"' 2>/dev/null);
+IP_INTERNAL=$(mdata-get sdc:nics | /usr/bin/json -ag ip -c 'this.nic_tag === "internal"' 2>/dev/null);
+
+# Get mysql_password from metadata if exists, or use mysql_pw, or set one.
+log "getting mysql_password"
+if [[ $(mdata-get mysql_password &>/dev/null)$? -eq "0" ]]; then
+    MYSQL_PW=$(mdata-get mysql_password 2>/dev/null);
+    mdata-put mysql_pw ${MYSQL_PW}
+elif [[ $(mdata-get mysql_pw &>/dev/null)$? -eq "0" ]]; then
+    MYSQL_PW=$(mdata-get mysql_pw 2>/dev/null);
+else
+    MYSQL_PW=$(od -An -N8 -x /dev/random | head -1 | tr -d ' ');
+    mdata-put mysql_pw ${MYSQL_PW}
+fi
+
+# Get mysql_server_id from metadata if exists
+log "getting mysql_server_id"
+if [[ $(mdata-get mysql_server_id &>/dev/null)$? -eq "0" ]]; then
+    MYSQL_SERVER_ID=$(mdata-get mysql_server_id 2>/dev/null);
+    gsed -i "/^server-id/s/server-id.*/server-id = ${MYSQL_SERVER_ID}/" /opt/local/etc/my.cnf
+fi
 
 # Generate svccfg happy password for quickbackup-percona
 # (one without special characters)
@@ -15,20 +33,18 @@ QB_US=qb-$(zonename | awk -F\- '{ print $5 }');
 mdata-put mysql_pw    "${MYSQL_PW}"
 mdata-put mysql_qb_pw "${QB_PW}"
 
-# Workaround for using DHCP so PRIVATE_IP or PUBLIC_IP is empty
-if [ -z "${PRIVATE_IP}" ] || [ -z "${PUBLIC_IP}" ]; then
-	PRIVATE_IP="127.0.0.1"
+# Workaround for using DHCP so IP_INTERNAL or IP_EXTERNAL is empty
+if [ -z "${IP_INTERNAL}" ] || [ -z "${IP_EXTERNAL}" ]; then
+	IP_INTERNAL="127.0.0.1"
 fi
 
 # Default query to lock down access and clean up
 MYSQL_INIT="DELETE from mysql.user;
+DELETE FROM mysql.proxies_priv WHERE Host='base.joyent.us';
 GRANT ALL on *.* to 'root'@'localhost' identified by '${MYSQL_PW}' with grant option;
-GRANT ALL on *.* to 'root'@'${PRIVATE_IP:-${PUBLIC_IP}}' identified by '${MYSQL_PW}' with grant option;
-GRANT LOCK TABLES,SELECT,RELOAD,SUPER,REPLICATION CLIENT on *.* to '${QB_US}'@'localhost' identified by '${QB_PW}';
-DROP DATABASE test;
-DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';
-FLUSH PRIVILEGES;
-install plugin sphinx soname 'ha_sphinx.so';"
+GRANT ALL on *.* to 'root'@'${IP_INTERNAL:-${IP_EXTERNAL}}' identified by '${MYSQL_PW}' with grant option;
+GRANT LOCK TABLES,SELECT,RELOAD,SUPER,PROCESS,REPLICATION CLIENT on *.* to '${QB_US}'@'localhost' identified by '${QB_PW}';
+FLUSH PRIVILEGES;"
 
 # MySQL my.cnf tuning
 MEMCAP=$(( ${RAM_IN_BYTES} / 1024 / 1024 ));
@@ -56,19 +72,14 @@ TABLE_CACHE=$((${MEMCAP}/4))
 THREAD_CACHE_SIZE=$((${MAX_CONNECTIONS}/2))
 [[ ${THREAD_CACHE_SIZE} -gt 1000 ]] && THREAD_CACHE_SIZE=1000
 
-# query_cache_size
-[[ ${MEMCAP} -lt 1000 ]] && QUERY_CACHE_SIZE=16
-[[ ${MEMCAP} -gt 1000 ]] && QUERY_CACHE_SIZE=64
-[[ ${MEMCAP} -gt 3000 ]] && QUERY_CACHE_SIZE=128
-
 log "tuning MySQL configuration"
 gsed -i \
-        -e "s/bind-address = 127.0.0.1/bind-address = ${PRIVATE_IP:-${PUBLIC_IP}}/" \
+        -e "s/bind-address = 127.0.0.1/bind-address = ${IP_INTERNAL:-${IP_EXTERNAL}}/" \
         -e "s/back_log = 64/back_log = ${BACK_LOG}/" \
         -e "s/table_open_cache = 512/table_open_cache = ${TABLE_CACHE}/" \
         -e "s/thread_cache_size = 1000/thread_cache_size = ${THREAD_CACHE_SIZE}/" \
         -e "s/max_connections = 1000/max_connections = ${MAX_CONNECTIONS}/" \
-        -e "s/innodb_buffer_pool_size = 16M/innodb_buffer_pool_size = ${INNODB_BUFFER_POOL_SIZE}/" \
+        -e "s/net_buffer_length = 2K/net_buffer_length = 16384/" \
         -e "s/#query_cache_size = 16M/query_cache_size = ${QUERY_CACHE_SIZE}M/" \
         -e "s/#query_cache_strip_comments/query_cache_strip_comments/" \
         -e "s/query_cache_type = 0/query_cache_type = 1/" \
