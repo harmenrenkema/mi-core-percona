@@ -1,3 +1,3 @@
 if [ ! -d /var/mysql/mysql ]; then
-	/opt/local/bin/mysql_install_db
+	cd /var/mysql && mysqld --initialize-insecure
 fi

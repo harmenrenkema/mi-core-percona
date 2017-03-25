@@ -35,7 +35,7 @@ mdata-put mysql_qb_pw "${QB_PW}"
 
 # Workaround for using DHCP so IP_INTERNAL or IP_EXTERNAL is empty
 if [ -z "${IP_INTERNAL}" ] || [ -z "${IP_EXTERNAL}" ]; then
-	IP_INTERNAL="127.0.0.1"
+    IP_INTERNAL="127.0.0.1"
 fi
 
 # Default query to lock down access and clean up
@@ -44,7 +44,8 @@ DELETE FROM mysql.proxies_priv WHERE Host='base.joyent.us';
 GRANT ALL on *.* to 'root'@'localhost' identified by '${MYSQL_PW}' with grant option;
 GRANT ALL on *.* to 'root'@'${IP_INTERNAL:-${IP_EXTERNAL}}' identified by '${MYSQL_PW}' with grant option;
 GRANT LOCK TABLES,SELECT,RELOAD,SUPER,PROCESS,REPLICATION CLIENT on *.* to '${QB_US}'@'localhost' identified by '${QB_PW}';
-FLUSH PRIVILEGES;"
+FLUSH PRIVILEGES;
+FLUSH TABLES;"
 
 # MySQL my.cnf tuning
 MEMCAP=$(( ${RAM_IN_BYTES} / 1024 / 1024 ));
@@ -63,11 +64,6 @@ BACK_LOG=64
 [[ ${MEMCAP} -gt 3000 ]] && MAX_CONNECTIONS=2000
 [[ ${MEMCAP} -gt 5000 ]] && MAX_CONNECTIONS=5000
 
-# table_cache
-TABLE_CACHE=$((${MEMCAP}/4))
-[[ ${TABLE_CACHE} -lt 256 ]] && TABLE_CACHE=256
-[[ ${TABLE_CACHE} -gt 512 ]] && TABLE_CACHE=512
-
 # thread_cache_size
 THREAD_CACHE_SIZE=$((${MAX_CONNECTIONS}/2))
 [[ ${THREAD_CACHE_SIZE} -gt 1000 ]] && THREAD_CACHE_SIZE=1000
@@ -76,11 +72,11 @@ log "tuning MySQL configuration"
 gsed -i \
         -e "s/bind-address = 127.0.0.1/bind-address = ${IP_INTERNAL:-${IP_EXTERNAL}}/" \
         -e "s/back_log = 64/back_log = ${BACK_LOG}/" \
-        -e "s/table_open_cache = 512/table_open_cache = ${TABLE_CACHE}/" \
         -e "s/thread_cache_size = 1000/thread_cache_size = ${THREAD_CACHE_SIZE}/" \
         -e "s/max_connections = 1000/max_connections = ${MAX_CONNECTIONS}/" \
         -e "s/net_buffer_length = 2K/net_buffer_length = 16384/" \
-        -e "s/#query_cache_size = 16M/query_cache_size = ${QUERY_CACHE_SIZE}M/" \
+        -e "s/innodb_buffer_pool_size = [0-9]*M/innodb_buffer_pool_size = ${INNODB_BUFFER_POOL_SIZE}/" \
+        -e "s/#query_cache_size = 16M/query_cache_size = 16M/" \
         -e "s/#query_cache_strip_comments/query_cache_strip_comments/" \
         -e "s/query_cache_type = 0/query_cache_type = 1/" \
         /opt/local/etc/my.cnf
@@ -118,9 +114,21 @@ sleep 1
 [[ "$(svcs -Ho state percona)" == "online" ]] || \
   ( log "ERROR MySQL SMF not reporting as 'online'" && exit 31 )
 
+log "import zoneinfo to mysql db"
+mysql_tzinfo_to_sql /usr/share/lib/zoneinfo | mysql mysql
+
 log "running the access lockdown SQL query"
 if [[ $(mysql -uroot -e "select version()" &>/dev/null)$? -eq "0" ]]; then
   mysql -u root -e "${MYSQL_INIT}" >/dev/null || ( log "ERROR MySQL query failed to execute." && exit 31; )
 else
   log "Can't login with no password set, continuing.";
 fi
+
+# Create username and password file for root user
+log "create my.cnf for root user"
+cat > /root/.my.cnf <<EOF
+[client]
+host = localhost
+user = root
+password = ${MYSQL_PW}
+EOF
