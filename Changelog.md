@@ -1,5 +1,13 @@
 # Changelog
 
+## 16.4.0
+
+* Update to newest percona 5.7 version. [Thomas Merkel]
+
+  This includes new features for znapzend and backup of the percona databases. We also automatically import the TZ information into the database.
+
+* Use official script from the latest image. [Thomas Merkel]
+
 ## 14.3.0
 
 * modify query cache default. [Thomas Merkel]
