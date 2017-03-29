@@ -85,6 +85,7 @@ log "configuring Quickbackup"
 svccfg -s quickbackup-percona setprop quickbackup/username = astring: ${QB_US}
 svccfg -s quickbackup-percona setprop quickbackup/password = astring: ${QB_PW}
 svcadm refresh quickbackup-percona
+touch /var/log/mysql/quickbackup-percona.log
 
 log "shutting down an existing instance of MySQL"
 if [[ "$(svcs -Ho state percona)" == "online" ]]; then
